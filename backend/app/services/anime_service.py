@@ -27,7 +27,7 @@ class AnimeService:
     def __init__(self):
         """Initialize the anime service with HTTP client configuration."""
         self.base_url = settings.JIKAN_API_URL
-        self.timeout = httpx.Timeout(30.0, connect=10.0)  # 30s total, 10s connect
+        self.timeout = httpx.Timeout(30.0, connect=10.0)
         
     async def fetch_seasonal_anime(self, year: Optional[int] = None, season: Optional[str] = None) -> SeasonalAnimeResponse:
         """
