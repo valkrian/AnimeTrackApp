@@ -3,13 +3,19 @@ FastAPI application entry point for Seasonal Anime Tracker.
 Configures CORS, middleware, and API routes for the backend service.
 """
 
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings, get_cors_config
+from app.core.cache import get_cache
 from app.api.v1 import anime
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Create FastAPI application instance
 app = FastAPI(
@@ -25,7 +31,7 @@ app = FastAPI(
 if settings.ENVIRONMENT == "production":
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=["*"]  # Configure with actual domains in production
+        allowed_hosts=settings.ALLOWED_HOSTS
     )
 
 # Configure CORS middleware with comprehensive settings
@@ -35,20 +41,52 @@ app.add_middleware(CORSMiddleware, **cors_config)
 # Include API routes
 app.include_router(anime.router, prefix="/api/v1", tags=["anime"])
 
+# Startup and shutdown events
+@app.on_event("startup")
+async def startup_event():
+    """
+    Application startup event.
+    Initialize background tasks and services.
+    """
+    # Start cache cleanup task
+    cache = get_cache()
+    cache.start_cleanup_task()
+    logger.info("Application startup completed")
+
+@app.on_event("shutdown") 
+async def shutdown_event():
+    """
+    Application shutdown event.
+    Clean up background tasks and resources.
+    """
+    # Stop cache cleanup task
+    cache = get_cache()
+    cache.stop_cleanup_task()
+    logger.info("Application shutdown completed")
+
 # Global exception handler for CORS errors
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     """
-    Global exception handler that ensures CORS headers are included in error responses.
+    Global exception handler that ensures proper CORS headers are included in error responses.
     """
+    # Get the origin from the request
+    origin = request.headers.get("origin")
+    cors_headers = {}
+    
+    # Only add CORS headers if origin is in allowed origins
+    if origin and origin in settings.effective_cors_origins:
+        cors_headers.update({
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+            "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, X-CSRF-Token, Cache-Control, Pragma"
+        })
+    
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "*"
-        }
+        headers=cors_headers
     )
 
 # Health check endpoint
@@ -71,25 +109,32 @@ async def health_check():
 
 # CORS preflight handler for complex requests
 @app.options("/{path:path}")
-async def options_handler(path: str):
+async def options_handler(request, path: str):
     """
     Handle OPTIONS preflight requests for CORS.
     
     Args:
+        request: The incoming request
         path: The requested path
         
     Returns:
-        JSONResponse: Empty response with CORS headers
+        JSONResponse: Empty response with proper CORS headers
     """
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "*",
+    # Get the origin from the request
+    origin = request.headers.get("origin")
+    cors_headers = {}
+    
+    # Only add CORS headers if origin is in allowed origins
+    if origin and origin in settings.effective_cors_origins:
+        cors_headers.update({
+            "Access-Control-Allow-Origin": origin,
+            "Access-Control-Allow-Credentials": "true",
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
             "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, X-CSRF-Token, Cache-Control, Pragma",
             "Access-Control-Max-Age": "86400"
-        }
-    )
+        })
+    
+    return JSONResponse(content={}, headers=cors_headers)
 
 # Root endpoint
 @app.get("/")
