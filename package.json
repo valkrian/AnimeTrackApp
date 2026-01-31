@@ -1,0 +1,20 @@
+{
+  "name": "anime-tracker-app",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.0.0",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "pnpm -C backend start:dev",
+    "dev:frontend": "pnpm -C frontend dev",
+    "build": "pnpm -C backend build && pnpm -C frontend build",
+    "lint": "pnpm -C backend lint && pnpm -C frontend lint",
+    "format": "prettier -w ."
+  },
+  "devDependencies": {
+    "prettier": "^3.3.2"
+  }
+}

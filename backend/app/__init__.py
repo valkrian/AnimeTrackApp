@@ -1,0 +1,1 @@
+# FastAPI Seasonal Anime Tracker Backend

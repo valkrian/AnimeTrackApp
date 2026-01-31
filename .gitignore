@@ -1,0 +1,16 @@
+node_modules
+dist
+.env
+.env.*
+.DS_Store
+.idea
+.vscode
+*.log
+pnpm-debug.log*
+coverage
+.cache
+backend/dist
+frontend/dist
+frontend/.env*
+.kiro
+__pycache__
