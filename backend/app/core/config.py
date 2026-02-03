@@ -25,8 +25,10 @@ class Settings(BaseSettings):
     # CORS Configuration - Development defaults
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",    # Next.js development server
+        "http://localhost:3001",    # Next.js development server (alternate port)
         "http://localhost:5173",    # Vite development server  
         "http://127.0.0.1:3000",    # Alternative localhost
+        "http://127.0.0.1:3001",    # Alternative localhost (alternate port)
         "http://127.0.0.1:5173",    # Alternative localhost
         "http://localhost:4173",    # Vite preview server
         "http://127.0.0.1:4173"     # Alternative localhost preview
