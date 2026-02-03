@@ -1,0 +1,32 @@
+# Root level .dockerignore for the monorepo
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+*.md
+docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Kiro
+.kiro/
+
+# Node modules at root
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.*.local

@@ -1,2 +1,61 @@
-version: "3.9"
-services: {}
+services:
+  # Backend FastAPI service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: anime-tracker-backend
+    ports:
+      - "8000:8000"
+    environment:
+      # Server configuration
+      - HOST=0.0.0.0
+      - PORT=8000
+      - ENVIRONMENT=development
+      - DEBUG=true
+      
+      # CORS configuration
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
+      
+      # Jikan API configuration
+      - JIKAN_API_BASE_URL=https://api.jikan.moe/v4
+      
+      # Cache configuration
+      - CACHE_TTL_MINUTES=60
+      - CACHE_CLEANUP_INTERVAL_MINUTES=10
+    networks:
+      - anime-tracker-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Frontend Next.js service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: anime-tracker-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Next.js configuration
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+      
+      # Backend API URL (internal Docker network)
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - anime-tracker-network
+    restart: unless-stopped
+
+networks:
+  anime-tracker-network:
+    driver: bridge
+    name: anime-tracker-network

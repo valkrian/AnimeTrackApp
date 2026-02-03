@@ -24,15 +24,12 @@ app = FastAPI(
     version="1.0.0",
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
-    openapi_url="/openapi.json" if settings.DEBUG else None
+    openapi_url="/openapi.json" if settings.DEBUG else None,
 )
 
 # Configure trusted host middleware for production security
 if settings.ENVIRONMENT == "production":
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=settings.ALLOWED_HOSTS
-    )
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.ALLOWED_HOSTS)
 
 # Configure CORS middleware with comprehensive settings
 cors_config = get_cors_config()
@@ -40,6 +37,7 @@ app.add_middleware(CORSMiddleware, **cors_config)
 
 # Include API routes
 app.include_router(anime.router, prefix="/api/v1", tags=["anime"])
+
 
 # Startup and shutdown events
 @app.on_event("startup")
@@ -53,7 +51,8 @@ async def startup_event():
     cache.start_cleanup_task()
     logger.info("Application startup completed")
 
-@app.on_event("shutdown") 
+
+@app.on_event("shutdown")
 async def shutdown_event():
     """
     Application shutdown event.
@@ -64,6 +63,7 @@ async def shutdown_event():
     cache.stop_cleanup_task()
     logger.info("Application shutdown completed")
 
+
 # Global exception handler for CORS errors
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
@@ -73,28 +73,31 @@ async def global_exception_handler(request, exc):
     # Get the origin from the request
     origin = request.headers.get("origin")
     cors_headers = {}
-    
+
     # Only add CORS headers if origin is in allowed origins
     if origin and origin in settings.effective_cors_origins:
-        cors_headers.update({
-            "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
-            "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, X-CSRF-Token, Cache-Control, Pragma"
-        })
-    
+        cors_headers.update(
+            {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, X-CSRF-Token, Cache-Control, Pragma",
+            }
+        )
+
     return JSONResponse(
         status_code=500,
         content={"detail": "Internal server error"},
-        headers=cors_headers
+        headers=cors_headers,
     )
+
 
 # Health check endpoint
 @app.get("/health")
 async def health_check():
     """
     Health check endpoint for monitoring and load balancer probes.
-    
+
     Returns:
         dict: Service health status and configuration info
     """
@@ -104,44 +107,48 @@ async def health_check():
         "version": "1.0.0",
         "environment": settings.ENVIRONMENT,
         "cors_enabled": True,
-        "cors_origins": len(settings.CORS_ORIGINS)
+        "cors_origins": len(settings.CORS_ORIGINS),
     }
+
 
 # CORS preflight handler for complex requests
 @app.options("/{path:path}")
 async def options_handler(request, path: str):
     """
     Handle OPTIONS preflight requests for CORS.
-    
+
     Args:
         request: The incoming request
         path: The requested path
-        
+
     Returns:
         JSONResponse: Empty response with proper CORS headers
     """
     # Get the origin from the request
     origin = request.headers.get("origin")
     cors_headers = {}
-    
+
     # Only add CORS headers if origin is in allowed origins
     if origin and origin in settings.effective_cors_origins:
-        cors_headers.update({
-            "Access-Control-Allow-Origin": origin,
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
-            "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, X-CSRF-Token, Cache-Control, Pragma",
-            "Access-Control-Max-Age": "86400"
-        })
-    
+        cors_headers.update(
+            {
+                "Access-Control-Allow-Origin": origin,
+                "Access-Control-Allow-Credentials": "true",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, Authorization, X-Requested-With, X-CSRF-Token, Cache-Control, Pragma",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
+
     return JSONResponse(content={}, headers=cors_headers)
+
 
 # Root endpoint
 @app.get("/")
 async def root():
     """
     Root endpoint providing API information.
-    
+
     Returns:
         dict: API welcome message and available endpoints
     """
@@ -150,17 +157,17 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs" if settings.DEBUG else "Documentation disabled in production",
         "health": "/health",
-        "api": {
-            "seasonal_anime": "/api/v1/anime/seasonal"
-        }
+        "api": {"seasonal_anime": "/api/v1/anime/seasonal"},
     }
+
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "app.main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,
-        log_level="debug" if settings.DEBUG else "info"
+        log_level="debug" if settings.DEBUG else "info",
     )

@@ -13,12 +13,12 @@ from .anime import (
     AnimeBroadcast,
     SeasonalAnimeResponse,
     PaginationInfo,
-    CacheEntry
+    CacheEntry,
 )
 
 __all__ = [
     "AnimeItem",
-    "Studio", 
+    "Studio",
     "Genre",
     "AnimeImages",
     "AnimeTrailer",
@@ -26,5 +26,5 @@ __all__ = [
     "AnimeBroadcast",
     "SeasonalAnimeResponse",
     "PaginationInfo",
-    "CacheEntry"
+    "CacheEntry",
 ]
